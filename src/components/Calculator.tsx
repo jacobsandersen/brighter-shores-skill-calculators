@@ -11,11 +11,11 @@ export type CalculatorProps = {
 }
 
 export default function Calculator({ profession, onBack }: CalculatorProps): ReactNode {
-  const [currentLevel, setCurrentLevel] = useState<number>(0)
-  const [currentXp, setCurrentXp] = useState<number>(0)
-  const [targetLevel, setTargetLevel] = useState<number>(1)
-  const [targetXp, setTargetXp] = useState<number>(500)
-  const [xpYieldPerItem, setXpYieldPerItem] = useState<number>(1)
+  const [currentLevel, setCurrentLevel] = useState<number|null>(0)
+  const [currentXp, setCurrentXp] = useState<number|null>(0)
+  const [targetLevel, setTargetLevel] = useState<number|null>(1)
+  const [targetXp, setTargetXp] = useState<number|null>(500)
+  const [xpYieldPerItem, setXpYieldPerItem] = useState<number|null>(1)
 
   const MAX_LEVEL = 500
   const MAX_XP = 1_861_867_939
@@ -32,12 +32,28 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
     if (xp < 0 || xp > MAX_XP) {
       return undefined
     }
-
-    return levelToXp.find(entry => entry.xp >= xp)?.level
+  
+    for (let i = 0; i < levelToXp.length - 1; i++) {
+      const current = levelToXp[i];
+      const next = levelToXp[i + 1];
+  
+      if (xp >= current.xp && xp < next.xp) {
+        return current.level;
+      }
+    }
+    
+    return levelToXp[levelToXp.length - 1].level;
   }
 
   function updateCurrentLevel(event: ChangeEvent<HTMLInputElement>) {
     const level = event.target.valueAsNumber
+
+    if (isNaN(level)) {
+      setCurrentLevel(null)
+      setCurrentXp(null)
+      return
+    }
+
     if (level >= 500) {
       return
     }
@@ -53,6 +69,13 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
 
   function updateCurrentXp(event: ChangeEvent<HTMLInputElement>) {
     const xp = event.target.valueAsNumber
+    
+    if (isNaN(xp)) {
+      setCurrentXp(null)
+      setCurrentLevel(null)
+      return
+    }
+
     if (xp >= MAX_XP) {
       return
     }
@@ -68,6 +91,13 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
 
   function updateTargetLevel(event: ChangeEvent<HTMLInputElement>) {
     const level = event.target.valueAsNumber
+
+    if (isNaN(level)) {
+      setTargetLevel(null)
+      setTargetXp(null)
+      return
+    }
+
     if (level > 500) {
       return
     }
@@ -83,6 +113,13 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
 
   function updateTargetXp(event: ChangeEvent<HTMLInputElement>) {
     const xp = event.target.valueAsNumber
+
+    if (isNaN(xp)) {
+      setTargetXp(null)
+      setTargetLevel(null)
+      return
+    }
+
     if (xp > MAX_XP) {
       return
     }
@@ -98,6 +135,12 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
 
   function updateXpYieldPerItem(event: ChangeEvent<HTMLInputElement>) {
     const value = event.target.valueAsNumber
+
+    if (isNaN(value)) {
+      setXpYieldPerItem(null)
+      return
+    }
+
     if (value < 0 || value > MAX_XP) {
       return
     }
@@ -105,12 +148,14 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
     setXpYieldPerItem(value)
   }
 
-  const xpDelta = targetXp - currentXp
-  const itemCount = Math.ceil(xpDelta / xpYieldPerItem)
+  const invalid = !currentLevel || !currentXp || !targetLevel || !targetXp 
+    || !xpYieldPerItem || (currentLevel > targetLevel) || (currentXp > targetXp)
 
-  const invalid =
-    (currentLevel > targetLevel) ||
-    (currentXp > targetXp)
+  let xpDelta = null, itemCount = null
+  if (!invalid) {
+    xpDelta = targetXp - currentXp
+    itemCount = Math.ceil(xpDelta / xpYieldPerItem)
+  }
 
   return (
     <div className="flex flex-col gap-y-4">
@@ -125,24 +170,24 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
         <p className="col-span-2 pb-2">Enter your current {profession.display} stats:</p>
         <div className="flex flex-row items-center justify-center">
           <p className="w-2/6">Current Level:</p>
-          <input className="w-4/6 rounded-md p-2" type="number" min="0" max={MAX_LEVEL - 1} value={currentLevel} onChange={updateCurrentLevel} />
+          <input className="w-4/6 rounded-md p-2" type="number" max={MAX_LEVEL - 1} value={currentLevel ?? undefined} onChange={updateCurrentLevel} />
         </div>
         <div className="flex flex-row items-center justify-center">
           <p className="w-2/6">Current XP:</p>
-          <input className="w-4/6 rounded-md p-2" type="number" min="0" max={MAX_XP} value={currentXp} onChange={updateCurrentXp} />
+          <input className="w-4/6 rounded-md p-2" type="number" max={MAX_XP} value={currentXp ?? undefined} onChange={updateCurrentXp} />
         </div>
         <div className="flex flex-row items-center justify-center">
           <p className="w-2/6">Target Level:</p>
-          <input className="w-4/6 rounded-md p-2" type="number" min="0" max={MAX_LEVEL} value={targetLevel} onChange={updateTargetLevel} />
+          <input className="w-4/6 rounded-md p-2" type="number" max={MAX_LEVEL} value={targetLevel ?? undefined} onChange={updateTargetLevel} />
         </div>
         <div className="flex flex-row items-center justify-center">
           <p className="w-2/6">Target XP:</p>
-          <input className="w-4/6 rounded-md p-2" type="number" min="0" max={MAX_XP} value={targetXp} onChange={updateTargetXp} />
+          <input className="w-4/6 rounded-md p-2" type="number" max={MAX_XP} value={targetXp ?? undefined} onChange={updateTargetXp} />
         </div>
       </div>
       <div className="p-4 border-2 border-dashed rounded-sm flex flex-col gap-y-2">
         <p>Enter the XP per item your training method yields (item selector coming soon):</p>
-        <input className="w-4/6 rounded-md p-2" type="number" min="1" value={xpYieldPerItem} onChange={updateXpYieldPerItem} />
+        <input className="w-4/6 rounded-md p-2" type="number" min="1" value={xpYieldPerItem ?? undefined} onChange={updateXpYieldPerItem} />
       </div>
       <div className="p-4 border-2 border-dashed rounded-sm flex flex-col gap-y-2">
         {invalid ? (

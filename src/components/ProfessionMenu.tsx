@@ -18,8 +18,11 @@ export default function ProfessionMenu({ onSelectProfession }: ProfessionMenuPro
       <div className="grid grid-rows-4 divide-y divide-dotted divide-secondary-foreground">
         {episodes.map(episode => <ProfessionSelector key={episode.identifier} episode={episode} onSelectProfession={onSelectProfession} />)}
       </div>
-      <p className="text-sm font-light">
+      <p className="text-xs font-light">
         Did I help make your life a little easier? <a href="https://ko-fi.com/jacobandersen" className="underline text-accent-foreground" target="_blank">Maybe buy me a coffee?</a> (If you want to. You don't have to. But it'd sure be cool if you did.)
+      </p>
+      <p className="text-xs font-light">
+        Oh, also, come <a href="https://github.com/jacobsandersen/brighter-shores-skill-calculators" className="underline text-accent-foreground" target="_blank">check out the code</a>.
       </p>
     </div>
   )
