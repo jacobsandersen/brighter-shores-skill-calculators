@@ -41,7 +41,7 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
         return current.level;
       }
     }
-    
+
     return levelToXp[levelToXp.length - 1].level;
   }
 
@@ -148,8 +148,8 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
     setXpYieldPerItem(value)
   }
 
-  const invalid = !currentLevel || !currentXp || !targetLevel || !targetXp 
-    || !xpYieldPerItem || (currentLevel > targetLevel) || (currentXp > targetXp)
+  const invalid = currentLevel == null || currentXp == null || targetLevel == null || targetXp == null 
+    || xpYieldPerItem == null || (currentLevel > targetLevel) || (currentXp > targetXp)
 
   let xpDelta = null, itemCount = null
   if (!invalid) {
