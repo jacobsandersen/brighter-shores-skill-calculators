@@ -1,0 +1,98 @@
+[
+  {
+    "identifier": "hopeport",
+    "display": "Hopeport",
+    "professions": [
+      {
+        "identifier": "guard",
+        "display": "Guard"
+      },
+      {
+        "identifier": "chef",
+        "display": "Chef"
+      },
+      {
+        "identifier": "fisher",
+        "display": "Fisher"
+      },
+      {
+        "identifier": "forager",
+        "display": "Forager"
+      },
+      {
+        "identifier": "alchemist",
+        "display": "Alchemist"
+      }
+    ]
+  },
+  {
+    "identifier": "hopeforest",
+    "display": "Hopeforest",
+    "professions": [
+      {
+        "identifier": "scout",
+        "display": "Scout"
+      },
+      {
+        "identifier": "gatherer",
+        "display": "Gatherer"
+      },
+      {
+        "identifier": "woodcutter",
+        "display": "Woodcutter"
+      },
+      {
+        "identifier": "carpenter",
+        "display": "Carpenter"
+      }
+    ]
+  },
+  {
+    "identifier": "mine_of_mantuban",
+    "display": "Mine of Mantuban",
+    "professions": [
+      {
+        "identifier": "minefighter",
+        "display": "Minefighter"
+      },
+      {
+        "identifier": "bonewright",
+        "display": "Bonewright"
+      },
+      {
+        "identifier": "miner",
+        "display": "Miner"
+      },
+      {
+        "identifier": "blacksmith",
+        "display": "Blacksmith"
+      },
+      {
+        "identifier": "stonemason",
+        "display": "Stonemason"
+      }
+    ]
+  },
+  {
+    "identifier": "crenopolis",
+    "display": "Crenopolis",
+    "professions": [
+      {
+        "identifier": "watchperson",
+        "display": "Watchperson"
+      },
+      {
+        "identifier": "detective",
+        "display": "Detective"
+      },
+      {
+        "identifier": "leatherworker",
+        "display": "Leatherworker"
+      },
+      {
+        "identifier": "merchant",
+        "display": "Merchant"
+      }
+    ]
+  }
+]
