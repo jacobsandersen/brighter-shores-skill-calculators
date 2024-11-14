@@ -20,17 +20,17 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
   const MAX_LEVEL = 500
   const MAX_XP = 1_861_867_939
 
-  function getXpForLevel(level: number): number | undefined {
+  function getXpForLevel(level: number): number | null {
     if (level < 0 || level > 500) {
-      return undefined
+      return null
     }
 
-    return levelToXp.find(entry => entry.level === level)?.xp
+    return levelToXp.find(entry => entry.level === level)?.xp ?? null
   }
 
-  function getLevelForXp(xp: number): number | undefined {
+  function getLevelForXp(xp: number): number | null {
     if (xp < 0 || xp > MAX_XP) {
-      return undefined
+      return null
     }
   
     for (let i = 0; i < levelToXp.length - 1; i++) {
@@ -54,17 +54,15 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
       return
     }
 
-    if (level >= 500) {
+    if (level < 0 || level > 500) {
       return
     }
 
     const xp = getXpForLevel(level)
-    if (!xp) {
-      return
+    if (xp !== null) {
+      setCurrentLevel(level)
+      setCurrentXp(xp)
     }
-
-    setCurrentLevel(level)
-    setCurrentXp(xp)
   }
 
   function updateCurrentXp(event: ChangeEvent<HTMLInputElement>) {
@@ -76,17 +74,15 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
       return
     }
 
-    if (xp >= MAX_XP) {
+    if (xp < 0 || xp >= MAX_XP) {
       return
     }
 
     const level = getLevelForXp(xp)
-    if (!level) {
-      return
+    if (level !== null) {
+      setCurrentXp(xp)
+      setCurrentLevel(level)
     }
-
-    setCurrentXp(xp)
-    setCurrentLevel(level)
   }
 
   function updateTargetLevel(event: ChangeEvent<HTMLInputElement>) {
@@ -98,17 +94,15 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
       return
     }
 
-    if (level > 500) {
+    if (level < 0 || level > 500) {
       return
     }
 
     const xp = getXpForLevel(level)
-    if (!xp) {
-      return
+    if (xp !== null) {
+      setTargetLevel(level)
+      setTargetXp(xp)
     }
-
-    setTargetLevel(level)
-    setTargetXp(xp)
   }
 
   function updateTargetXp(event: ChangeEvent<HTMLInputElement>) {
@@ -120,17 +114,15 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
       return
     }
 
-    if (xp > MAX_XP) {
+    if (xp < 0 || xp > MAX_XP) {
       return
     }
 
     const level = getLevelForXp(xp)
-    if (!level) {
-      return
+    if (level !== null) {
+      setTargetXp(xp)
+      setTargetLevel(level)
     }
-
-    setTargetXp(xp)
-    setTargetLevel(level)
   }
 
   function updateXpYieldPerItem(event: ChangeEvent<HTMLInputElement>) {
@@ -166,6 +158,7 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
         </Button>
         <h1 className="text-lg font-semibold">{profession.display}</h1>
       </div>
+      <p className="text-destructive text-justify"><strong>Note: </strong>We don't currently have level&lt;&ndash;&gt;xp mappings for very high levels. Levels 0-200 will work, but you may notice for example that level 475 is available while level 476 is not. This is, unfortunately, currently normal behavior. As our datasets improve, so will the tool. Sorry for the inconvenience!</p>
       <div className="p-4 border-2 border-dashed rounded-sm grid grid-cols-2 gap-y-2 gap-x-6">
         <p className="col-span-2 pb-2">Enter your current {profession.display} stats:</p>
         <div className="flex flex-row items-center justify-center">
