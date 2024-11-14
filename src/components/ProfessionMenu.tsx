@@ -3,9 +3,10 @@ import { ReactNode } from "react";
 import episodes from '@/assets/episode-professions.json'
 import ProfessionSelector from "./ProfessionSelector";
 import { Profession } from "@/lib/types/Profession";
+import { Episode } from "@/lib/types/Episode";
 
 export type ProfessionMenuProps = {
-  onSelectProfession: (profession: Profession) => void
+  onSelectProfession: (episode: Episode, profession: Profession) => void
 }
 
 export default function ProfessionMenu({ onSelectProfession }: ProfessionMenuProps): ReactNode {

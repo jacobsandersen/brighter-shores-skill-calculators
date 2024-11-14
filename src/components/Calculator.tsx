@@ -1,49 +1,31 @@
 import { Profession } from "@/lib/types/Profession";
-import { ChevronsLeft } from "lucide-react";
+import { ChevronsLeft, ShieldAlert } from "lucide-react";
 import { ChangeEvent, ReactNode, useState } from "react";
 import { Button } from "./ui/button";
 
-import levelToXp from '@/assets/level-to-xp.json'
+import ProfessionIcon from "./ProfessionIcon";
+import { Episode } from "@/lib/types/Episode";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import CalculatorInput from "./CalculatorInput";
+import { MAX_LEVEL, MAX_XP } from "@/lib/constants";
+import { getLevelForXp, getXpForLevel } from "@/lib/utils";
+import CalculatorResult from "./CalculatorResult";
 
 export type CalculatorProps = {
+  episode: Episode,
   profession: Profession,
   onBack: () => void
 }
 
-export default function Calculator({ profession, onBack }: CalculatorProps): ReactNode {
-  const [currentLevel, setCurrentLevel] = useState<number|null>(0)
-  const [currentXp, setCurrentXp] = useState<number|null>(0)
-  const [targetLevel, setTargetLevel] = useState<number|null>(1)
-  const [targetXp, setTargetXp] = useState<number|null>(500)
-  const [xpYieldPerItem, setXpYieldPerItem] = useState<number|null>(1)
-
-  const MAX_LEVEL = 500
-  const MAX_XP = 1_861_867_939
-
-  function getXpForLevel(level: number): number | null {
-    if (level < 0 || level > 500) {
-      return null
-    }
-
-    return levelToXp.find(entry => entry.level === level)?.xp ?? null
-  }
-
-  function getLevelForXp(xp: number): number | null {
-    if (xp < 0 || xp > MAX_XP) {
-      return null
-    }
-  
-    for (let i = 0; i < levelToXp.length - 1; i++) {
-      const current = levelToXp[i];
-      const next = levelToXp[i + 1];
-  
-      if (xp >= current.xp && xp < next.xp) {
-        return current.level;
-      }
-    }
-
-    return levelToXp[levelToXp.length - 1].level;
-  }
+export default function Calculator({ episode, profession, onBack }: CalculatorProps): ReactNode {
+  const [currentLevel, setCurrentLevel] = useState<number | null>(0)
+  const [currentXp, setCurrentXp] = useState<number | null>(0)
+  const [targetLevel, setTargetLevel] = useState<number | null>(1)
+  const [targetXp, setTargetXp] = useState<number | null>(500)
+  const [xpYieldPerItem, setXpYieldPerItem] = useState<number | null>(1)
+  const [xpBoostPercent, setXpBoostPercent] = useState<number | null>(0)
+  const [currentKpPercent, setCurrentKpPercent] = useState<number | null>(0)
+  const [kpPercentGainPerItem, setKpPercentGainPerItem] = useState<number | null>(0)
 
   function updateCurrentLevel(event: ChangeEvent<HTMLInputElement>) {
     const level = event.target.valueAsNumber
@@ -67,7 +49,7 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
 
   function updateCurrentXp(event: ChangeEvent<HTMLInputElement>) {
     const xp = event.target.valueAsNumber
-    
+
     if (isNaN(xp)) {
       setCurrentXp(null)
       setCurrentLevel(null)
@@ -140,58 +122,111 @@ export default function Calculator({ profession, onBack }: CalculatorProps): Rea
     setXpYieldPerItem(value)
   }
 
-  const invalid = currentLevel == null || currentXp == null || targetLevel == null || targetXp == null 
-    || xpYieldPerItem == null || (currentLevel > targetLevel) || (currentXp > targetXp)
+  function updateXpBoostPercent(event: ChangeEvent<HTMLInputElement>) {
+    const value = event.target.valueAsNumber
 
-  let xpDelta = null, itemCount = null
-  if (!invalid) {
-    xpDelta = targetXp - currentXp
-    itemCount = Math.ceil(xpDelta / xpYieldPerItem)
+    if (isNaN(value)) {
+      setXpBoostPercent(null)
+      return
+    }
+
+    if (value < 0 || value > 100) {
+      return
+    }
+
+    setXpBoostPercent(value)
   }
+
+  function updateCurrentKpPercent(event: ChangeEvent<HTMLInputElement>) {
+    const value = event.target.valueAsNumber
+
+    if (isNaN(value)) {
+      setCurrentKpPercent(null)
+      return
+    }
+
+    if (value < 0 || value > 100) {
+      return
+    }
+
+    setCurrentKpPercent(value)
+  }
+
+  function updateKpPercentGainPerItem(event: ChangeEvent<HTMLInputElement>) {
+    const value = event.target.valueAsNumber
+
+    if (isNaN(value)) {
+      setKpPercentGainPerItem(null)
+      return
+    }
+
+    if (value < 0 || value > 100) {
+      return
+    }
+
+    setKpPercentGainPerItem(value)
+  }
+
+  const valid =
+    (currentLevel !== null && currentXp !== null && targetLevel !== null
+      && targetXp != null && xpYieldPerItem !== null && xpBoostPercent !== null
+      && currentKpPercent !== null && kpPercentGainPerItem !== null
+    ) && (currentLevel < targetLevel)
+    && (currentXp < targetXp)
 
   return (
     <div className="flex flex-col gap-y-4">
-      <div className="flex gap-x-4 items-center">
+      <div className="flex gap-x-6 items-center">
         <Button onClick={onBack}>
           <ChevronsLeft />
           Go back
         </Button>
-        <h1 className="text-lg font-semibold">{profession.display}</h1>
+        <div className="flex gap-x-3 items-center">
+          <ProfessionIcon episode={episode} profession={profession} heightPx={25} widthPx={25} />
+          <h1 className="text-lg font-semibold">{profession.display}</h1>
+        </div>
       </div>
-      <p className="text-destructive text-justify"><strong>Note: </strong>We don't currently have level&lt;&ndash;&gt;xp mappings for very high levels. Levels 0-200 will work, but you may notice for example that level 475 is available while level 476 is not. This is, unfortunately, currently normal behavior. As our datasets improve, so will the tool. Sorry for the inconvenience!</p>
+      <Alert variant="destructive">
+        <ShieldAlert className="h-4 w-4" />
+        <AlertTitle>Heads up {profession.display}, we're in uncharted waters...</AlertTitle>
+        <AlertDescription>
+          Level-to-XP mapping is currently best-effort. If you notice an inconsistency, please ping @simpleauthority in the Brighter Shores community discord. Also, coordinate the proper value of the XP for the Level with Luca's XP table (also found in the Discord.) As time goes on, the dataset will improve!
+        </AlertDescription>
+      </Alert>
       <div className="p-4 border-2 border-dashed rounded-sm grid grid-cols-2 gap-y-2 gap-x-6">
-        <p className="col-span-2 pb-2">Enter your current {profession.display} stats:</p>
-        <div className="flex flex-row items-center justify-center">
-          <p className="w-2/6">Current Level:</p>
-          <input className="w-4/6 rounded-md p-2" type="number" max={MAX_LEVEL - 1} value={currentLevel ?? undefined} onChange={updateCurrentLevel} />
-        </div>
-        <div className="flex flex-row items-center justify-center">
-          <p className="w-2/6">Current XP:</p>
-          <input className="w-4/6 rounded-md p-2" type="number" max={MAX_XP} value={currentXp ?? undefined} onChange={updateCurrentXp} />
-        </div>
-        <div className="flex flex-row items-center justify-center">
-          <p className="w-2/6">Target Level:</p>
-          <input className="w-4/6 rounded-md p-2" type="number" max={MAX_LEVEL} value={targetLevel ?? undefined} onChange={updateTargetLevel} />
-        </div>
-        <div className="flex flex-row items-center justify-center">
-          <p className="w-2/6">Target XP:</p>
-          <input className="w-4/6 rounded-md p-2" type="number" max={MAX_XP} value={targetXp ?? undefined} onChange={updateTargetXp} />
-        </div>
+        <p className="text-lg font-semibold col-span-2 pb-2">Enter your current and desired {profession.display} stats:</p>
+        <CalculatorInput label="Current Level" max={MAX_LEVEL - 1} control={currentLevel} onChange={updateCurrentLevel} />
+        <CalculatorInput label="Current XP" max={MAX_XP - 1} control={currentXp} onChange={updateCurrentXp} />
+        <CalculatorInput label="Target Level" max={MAX_LEVEL} control={targetLevel} onChange={updateTargetLevel} />
+        <CalculatorInput label="Target XP" max={MAX_LEVEL} control={targetXp} onChange={updateTargetXp} />
+      </div>
+      <div className="p-4 border-2 border-dashed rounded-sm grid grid-cols-2 gap-y-2 gap-x-6">
+        <p className="text-lg font-semibold col-span-2 pb-2">Modify calculation parameters:</p>
+        <CalculatorInput label="XP/Item" tooltip="The amount of XP killing/harvesting/creating one enemy/item gives you. You can find this on the wiki. Later, this tool will let you select the enemy/item instead." min={1} max={MAX_XP} control={xpYieldPerItem} onChange={updateXpYieldPerItem} />
+        <CalculatorInput label="XP Boost %" tooltip="How much XP boost you have from your higher tier tool, enchantment, or xp potion. If none, use 0." min={0} max={100} control={xpBoostPercent} onChange={updateXpBoostPercent} />
+        <CalculatorInput label="Current KP %" tooltip="How far along your current KP percentage is. 0 is the default." min={0} max={100} control={currentKpPercent} onChange={updateCurrentKpPercent} />
+        <CalculatorInput label="KP Gain %/Item" tooltip="How much KP% you gain per enemy/item killed/harvested/created (this is a guess for now)." min={0} max={100} control={kpPercentGainPerItem} onChange={updateKpPercentGainPerItem} />
       </div>
       <div className="p-4 border-2 border-dashed rounded-sm flex flex-col gap-y-2">
-        <p>Enter the XP per item your training method yields (item selector coming soon):</p>
-        <input className="w-4/6 rounded-md p-2" type="number" min="1" value={xpYieldPerItem ?? undefined} onChange={updateXpYieldPerItem} />
-      </div>
-      <div className="p-4 border-2 border-dashed rounded-sm flex flex-col gap-y-2">
-        {invalid ? (
-          <p>Looks like something is wrong with your stats. Make sure your current level is less than your target level. You can't calculate back in time (sadly).</p>
+        <p className="text-lg font-semibold pb-2">Results:</p>
+        {valid ? (
+          <CalculatorResult
+            currentLevel={currentLevel!}
+            currentXp={currentXp!}
+            targetLevel={targetLevel!}
+            targetXp={targetXp!}
+            xpYieldPerItem={xpYieldPerItem!}
+            xpBoostPercent={xpBoostPercent!}
+            currentKpPercent={currentKpPercent!}
+            kpPercentGainPerItem={kpPercentGainPerItem!}
+          />
         ) : (
-          <>
-            <p>Looks like you need {xpDelta} xp to go from {profession.display} level {currentLevel} to level {targetLevel}.</p>
-            <p>Since your training method yields {xpYieldPerItem} xp per item, you need to create/harvest <strong>{itemCount}</strong> items.</p>
-            <p><strong>NOTE: </strong>This calculation is not taking knowledge point xp redemptions nor first-time badge xp bonuses into account. You may get there faster if you exploit all available resources.</p>
-          </>
+          <Alert>
+            <AlertTitle>Something's not right...</AlertTitle>
+            <AlertDescription>Seems like something is wrong with your stats. Make sure you have filled in values for all fields, even if that value is 0 (where applicable). Also, make sure your current level is less than your target level.</AlertDescription>
+          </Alert>
         )}
+
       </div>
     </div>
 
