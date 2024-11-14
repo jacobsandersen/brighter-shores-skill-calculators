@@ -10,6 +10,9 @@ import CalculatorInput from "./CalculatorInput";
 import { MAX_LEVEL, MAX_XP } from "@/lib/constants";
 import { getLevelForXp, getXpForLevel } from "@/lib/utils";
 import CalculatorResult from "./CalculatorResult";
+import { Switch } from "./ui/switch";
+import { Label } from "./ui/label";
+import { useDebounce } from 'use-debounce'
 
 export type CalculatorProps = {
   episode: Episode,
@@ -17,15 +20,27 @@ export type CalculatorProps = {
   onBack: () => void
 }
 
+const DEBOUNCE_TIME_MS = 250
+
 export default function Calculator({ episode, profession, onBack }: CalculatorProps): ReactNode {
+  const [debug, setDebug] = useState<boolean>(false)
+  const [debugLog, setDebugLog] = useState<string[]>([])
   const [currentLevel, setCurrentLevel] = useState<number | null>(0)
+  const [debouncedCurrentLevel] = useDebounce(currentLevel, DEBOUNCE_TIME_MS)
   const [currentXp, setCurrentXp] = useState<number | null>(0)
+  const [debouncedCurrentXp] = useDebounce(currentXp, DEBOUNCE_TIME_MS)
   const [targetLevel, setTargetLevel] = useState<number | null>(1)
+  const [debouncedTargetLevel] = useDebounce(targetLevel, DEBOUNCE_TIME_MS)
   const [targetXp, setTargetXp] = useState<number | null>(500)
+  const [debouncedTargetXp] = useDebounce(targetXp, DEBOUNCE_TIME_MS)
   const [xpYieldPerItem, setXpYieldPerItem] = useState<number | null>(1)
+  const [debouncedXpYieldPerItem] = useDebounce(xpYieldPerItem, DEBOUNCE_TIME_MS)
   const [xpBoostPercent, setXpBoostPercent] = useState<number | null>(0)
+  const [debouncedXpBoostPercent] = useDebounce(xpBoostPercent, DEBOUNCE_TIME_MS)
   const [currentKpPercent, setCurrentKpPercent] = useState<number | null>(0)
+  const [debouncedCurrentKpPercent] = useDebounce(currentKpPercent, DEBOUNCE_TIME_MS)
   const [kpPercentGainPerItem, setKpPercentGainPerItem] = useState<number | null>(0)
+  const [debouncedKpPercentGainPerItem] = useDebounce(kpPercentGainPerItem, DEBOUNCE_TIME_MS)
 
   function updateCurrentLevel(event: ChangeEvent<HTMLInputElement>) {
     const level = event.target.valueAsNumber
@@ -176,16 +191,23 @@ export default function Calculator({ episode, profession, onBack }: CalculatorPr
 
   return (
     <div className="flex flex-col gap-y-4">
-      <div className="flex gap-x-6 items-center">
-        <Button onClick={onBack}>
-          <ChevronsLeft />
-          Go back
-        </Button>
-        <div className="flex gap-x-3 items-center">
-          <ProfessionIcon episode={episode} profession={profession} heightPx={25} widthPx={25} />
-          <h1 className="text-lg font-semibold">{profession.display}</h1>
+      <div className="flex justify-between items-center">
+        <div className="flex gap-x-6 items-center">
+          <Button onClick={onBack}>
+            <ChevronsLeft />
+            Go back
+          </Button>
+          <div className="flex gap-x-3 items-center">
+            <ProfessionIcon episode={episode} profession={profession} heightPx={25} widthPx={25} />
+            <h1 className="text-lg font-semibold">{profession.display}</h1>
+          </div>
+        </div>
+        <div className="flex gap-x-2 items-center">
+          <Switch id="debug-toggle" checked={debug} onCheckedChange={(checked) => setDebug(checked)} />
+          <Label htmlFor="debug-toggle">Show detailed calculation info</Label>
         </div>
       </div>
+
       <Alert variant="destructive">
         <ShieldAlert className="h-4 w-4" />
         <AlertTitle>Heads up {profession.display}, we're in uncharted waters...</AlertTitle>
@@ -208,17 +230,26 @@ export default function Calculator({ episode, profession, onBack }: CalculatorPr
         <CalculatorInput label="KP Gain %/Item" tooltip="How much KP% you gain per enemy/item killed/harvested/created (this is a guess for now)." min={0} max={100} control={kpPercentGainPerItem} onChange={updateKpPercentGainPerItem} />
       </div>
       <div className="p-4 border-2 border-dashed rounded-sm flex flex-col gap-y-2">
-        <p className="text-lg font-semibold pb-2">Results:</p>
-        {valid ? (
+        {debug ? (
+          <>
+            <p className="text-lg font-semibold pb-2">Detailed Calculation Log:</p>
+            <pre className="h-32 w-full overflow-scroll">
+              {debugLog.map((line, idx) => (
+                <p key={`line-${idx}`}>{line}</p>
+              ))}
+            </pre>
+          </>
+        ) : valid ? (
           <CalculatorResult
-            currentLevel={currentLevel!}
-            currentXp={currentXp!}
-            targetLevel={targetLevel!}
-            targetXp={targetXp!}
-            xpYieldPerItem={xpYieldPerItem!}
-            xpBoostPercent={xpBoostPercent!}
-            currentKpPercent={currentKpPercent!}
-            kpPercentGainPerItem={kpPercentGainPerItem!}
+            currentLevel={debouncedCurrentLevel!}
+            currentXp={debouncedCurrentXp!}
+            targetLevel={debouncedTargetLevel!}
+            targetXp={debouncedTargetXp!}
+            xpYieldPerItem={debouncedXpYieldPerItem!}
+            xpBoostPercent={debouncedXpBoostPercent!}
+            currentKpPercent={debouncedCurrentKpPercent!}
+            kpPercentGainPerItem={debouncedKpPercentGainPerItem!}
+            setDebugLog={setDebugLog}
           />
         ) : (
           <Alert>
@@ -226,9 +257,7 @@ export default function Calculator({ episode, profession, onBack }: CalculatorPr
             <AlertDescription>Seems like something is wrong with your stats. Make sure you have filled in values for all fields, even if that value is 0 (where applicable). Also, make sure your current level is less than your target level.</AlertDescription>
           </Alert>
         )}
-
       </div>
     </div>
-
   )
 }

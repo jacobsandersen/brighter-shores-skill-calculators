@@ -1,5 +1,6 @@
-import { ReactNode } from "react";
-import { getXpForLevel } from "@/lib/utils";
+import { ReactNode, useEffect, useRef, useState } from "react";
+import CalculatorWorker from './calculator-worker?worker'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 
 export type CalculatorResultProps = {
   currentLevel: number,
@@ -9,54 +10,72 @@ export type CalculatorResultProps = {
   xpYieldPerItem: number,
   xpBoostPercent: number,
   currentKpPercent: number,
-  kpPercentGainPerItem: number
+  kpPercentGainPerItem: number,
+  setDebugLog: React.Dispatch<React.SetStateAction<string[]>>
 }
 
-export default function CalculatorResult({
-  currentLevel, currentXp, targetLevel, targetXp,
-  xpYieldPerItem, xpBoostPercent, currentKpPercent,
-  kpPercentGainPerItem
-}: CalculatorResultProps): ReactNode {
-  let currentXpTmp = currentXp
-  let currentLevelTmp = currentLevel
+export default function CalculatorResult(props: CalculatorResultProps): ReactNode {
+  const [itemsNeeded, setItemsNeeded] = useState<number>(0)
+  const [kpsRedeemed, setKpsRedeemed] = useState<number>(0)
 
-  let currentLevelXp = getXpForLevel(currentLevelTmp)
-  let nextLevelXp = getXpForLevel(currentLevelTmp + 1)
+  const workerRef = useRef<Worker | null>(null)
 
-  const totalXpPerItem = xpYieldPerItem * (1 + (xpBoostPercent / 100))
+  const createWorker = () => workerRef.current = new CalculatorWorker()
 
-  let itemsNeeded = 0
-  let knowledgePointPercent = currentKpPercent
-  let kpsRedeemed = 0
-
-  const kpXpRedemptionModifier = (lvl: number): number => lvl < 200 ? 0.25 : 0.0625;
-
-  const addXpWithPotentialLevelUp = (xp: number): void => {
-    currentXpTmp += xp
-
-    if (currentXpTmp >= nextLevelXp) {
-      currentLevelTmp++
-      currentLevelXp = nextLevelXp
-      nextLevelXp = getXpForLevel(currentLevelTmp + 1)
-    }
-  }
-
-  while ((currentLevelTmp < targetLevel) || (currentXpTmp < targetXp)) {
-    addXpWithPotentialLevelUp(totalXpPerItem)
-
-    knowledgePointPercent += kpPercentGainPerItem
-    if (knowledgePointPercent >= 100) {
-      addXpWithPotentialLevelUp(kpXpRedemptionModifier(currentLevelTmp) * currentLevelXp)
-      kpsRedeemed++
-      knowledgePointPercent = 0
+  useEffect(() => {
+    if (window.Worker) {
+      createWorker()
     }
 
-    itemsNeeded++
-  }
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate()
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!workerRef.current) return
+
+    workerRef.current.terminate()
+    workerRef.current = createWorker()
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const {setDebugLog, ...rest} = props
+    workerRef.current.postMessage(rest)
+
+    workerRef.current.onmessage = (event: MessageEvent<{ itemsNeeded: number, kpsRedeemed: number, debugLog: string[] }>) => {
+      setItemsNeeded(event.data.itemsNeeded)
+      setKpsRedeemed(event.data.kpsRedeemed)
+      props.setDebugLog(event.data.debugLog)
+    }
+  }, [props])
+
+  const info = [
+    ["Items Needed", itemsNeeded],
+    ["KPs Redeemed for XP", kpsRedeemed]
+  ]
 
   return (
     <>
-      <p>Starting with level {currentLevel} ({currentXp} xp) to reach level {targetLevel} ({targetXp} xp) with an XP yield per item of {xpYieldPerItem} xp/item, an XP boost of {xpBoostPercent}%, initial knowledge points of {currentKpPercent}% and earning {kpPercentGainPerItem}% knowledge points per item, you will need to create {itemsNeeded} items (assuming you maintain your {xpBoostPercent}% XP boost and redeem all ({kpsRedeemed}) knowledge points for XP).</p>
+      <p className="text-lg font-semibold pb-2">Results:</p>
+      <p>Assuming you maintain your XP Boost and redeem your knowledge points for XP, you will need:</p>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Field Name</TableHead>
+            <TableHead>Data</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {info.map((datum, idx) => (
+            <TableRow key={`datum-${idx}`}>
+              <TableCell>{datum[0]}</TableCell>
+              <TableCell>{datum[1]}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </>
   )
 }

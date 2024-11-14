@@ -6,6 +6,7 @@ import Calculator from "./components/Calculator";
 import ProfessionMenu from "./components/ProfessionMenu";
 import { Episode } from "./lib/types/Episode";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { Toaster } from "sonner";
 
 export default function App(): ReactNode {
   const [selection, setSelection] = useState<{ episode: Episode, profession: Profession } | null>(null)
@@ -17,6 +18,7 @@ export default function App(): ReactNode {
           <Calculator episode={selection.episode} profession={selection.profession} onBack={() => setSelection(null)} />
           : <ProfessionMenu onSelectProfession={(episode, profession) => setSelection({ episode, profession })} />}
       </Layout>
+      <Toaster />
     </TooltipProvider>
   )
 }
