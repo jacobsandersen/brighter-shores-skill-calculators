@@ -263,11 +263,12 @@ export default function Calculator({ episode, profession, onBack }: CalculatorPr
             currentKpPercent={debouncedCurrentKpPercent!}
             kpPercentGainPerItem={debouncedKpPercentGainPerItem!}
             setDebugLog={setDebugLog}
+            useKpForXp={useKpForXp}
           />
         ) : (
           <Alert>
             <AlertTitle>Something's not right...</AlertTitle>
-            <AlertDescription>Seems like something is wrong with your stats. Make sure you have filled in values for all fields, even if that value is 0 (where applicable). Also, make sure your current level is less than your target level.</AlertDescription>
+            <AlertDescription><p>Seems like something is wrong with your stats. Make sure you have filled in values for all fields, even if that value is 0 (where applicable). Also, make sure your current level is less than your target level.</p></AlertDescription>
           </Alert>
         )}
       </div>

@@ -11,6 +11,7 @@ export type CalculatorResultProps = {
   xpBoostPercent: number,
   currentKpPercent: number,
   kpPercentGainPerItem: number,
+  useKpForXp: boolean,
   setDebugLog: React.Dispatch<React.SetStateAction<string[]>>
 }
 
@@ -53,7 +54,7 @@ export default function CalculatorResult(props: CalculatorResultProps): ReactNod
 
   const info = [
     ["Items Needed", itemsNeeded],
-    ["KPs Redeemed for XP", kpsRedeemed]
+    ["KPs Redeemed", kpsRedeemed]
   ]
 
   return (

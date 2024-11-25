@@ -7,7 +7,7 @@ onmessage = (event: MessageEvent<CalculatorResultProps>) => {
   const {
     currentLevel, currentXp, targetLevel, targetXp,
     xpYieldPerItem, xpBoostPercent, currentKpPercent,
-    kpPercentGainPerItem
+    kpPercentGainPerItem, useKpForXp
   } = event.data
 
   debugLog.push(`Beginning calculation with data: ${JSON.stringify(event.data)}`)
@@ -51,11 +51,17 @@ onmessage = (event: MessageEvent<CalculatorResultProps>) => {
     if (knowledgePointPercent >= 100) {
       debugLog.push(`> KP >= 100%`)
 
-      const modifier = kpXpRedemptionModifier(currentLevelTmp)
-      debugLog.push(`> KP redemption modifier = ${modifier}`)
+      if (useKpForXp) {
+        debugLog.push('> Automatically redeeming KP for XP')
 
-      const xpRedemption = modifier * (nextLevelXp - currentLevelXp)
-      addXpWithPotentialLevelUp(xpRedemption)
+        const modifier = kpXpRedemptionModifier(currentLevelTmp)
+        debugLog.push(`> KP redemption modifier = ${modifier}`)
+
+        const xpRedemption = modifier * (nextLevelXp - currentLevelXp)
+        addXpWithPotentialLevelUp(xpRedemption)
+      } else {
+        debugLog.push('> Not automatically redeeming KP for XP (assuming it is redeemed for something else.)')
+      }
 
       kpsRedeemed++
       knowledgePointPercent -= 100
