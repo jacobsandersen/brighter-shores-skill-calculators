@@ -1,7 +1,7 @@
 import { Profession } from "@/lib/types/Profession";
 import { ChevronsLeft, ShieldAlert } from "lucide-react";
 import { ChangeEvent, ReactNode, useState } from "react";
-import { Button } from "./ui/button";
+import Button from "./ui/button";
 
 import ProfessionIcon from "./ProfessionIcon";
 import { Episode } from "@/lib/types/Episode";
@@ -13,6 +13,7 @@ import CalculatorResult from "./CalculatorResult";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
 import { useDebounce } from 'use-debounce'
+import { useCookies } from "react-cookie";
 
 export type CalculatorProps = {
   episode: Episode,
@@ -25,6 +26,8 @@ const DEBOUNCE_TIME_MS = 250
 export default function Calculator({ episode, profession, onBack }: CalculatorProps): ReactNode {
   const [debug, setDebug] = useState<boolean>(false)
   const [debugLog, setDebugLog] = useState<string[]>([])
+  const [useKpForXp, setUseKpForXp] = useState<boolean>(true)
+  const [cookies, setCookie] = useCookies(['dismissed-alert'])
   const [currentLevel, setCurrentLevel] = useState<number | null>(0)
   const [debouncedCurrentLevel] = useDebounce(currentLevel, DEBOUNCE_TIME_MS)
   const [currentXp, setCurrentXp] = useState<number | null>(0)
@@ -189,56 +192,66 @@ export default function Calculator({ episode, profession, onBack }: CalculatorPr
     ) && (currentLevel < targetLevel)
     && (currentXp < targetXp)
 
+  const shouldDisplayAlert = !cookies['dismissed-alert']
+
   return (
     <div className="flex flex-col gap-y-4">
-      <div className="flex justify-between items-center">
-        <div className="flex gap-x-6 items-center">
-          <Button onClick={onBack}>
-            <ChevronsLeft />
-            Go back
-          </Button>
-          <div className="flex gap-x-3 items-center">
-            <ProfessionIcon episode={episode} profession={profession} heightPx={25} widthPx={25} />
-            <h1 className="text-lg font-semibold">{profession.display}</h1>
-          </div>
-        </div>
+      <div className="flex items-center gap-x-6">
+        <Button onClick={onBack} size="sm">
+          <ChevronsLeft />
+          Go back
+        </Button>
         <div className="flex gap-x-2 items-center">
-          <Switch id="debug-toggle" checked={debug} onCheckedChange={(checked) => setDebug(checked)} />
-          <Label htmlFor="debug-toggle">Show detailed calculation info</Label>
+          <ProfessionIcon episode={episode} profession={profession} heightPx={18} widthPx={18} />
+          <h1 className="font-semibold">{profession.display}</h1>
         </div>
       </div>
 
-      <Alert variant="destructive">
-        <ShieldAlert className="h-4 w-4" />
-        <AlertTitle>Heads up {profession.display}, we're in uncharted waters...</AlertTitle>
-        <AlertDescription>
-          Level-to-XP mapping is currently best-effort. If you notice an inconsistency, please ping @simpleauthority in the Brighter Shores community discord. Also, coordinate the proper value of the XP for the Level with Luca's XP table (also found in the Discord.) As time goes on, the dataset will improve!
-        </AlertDescription>
-      </Alert>
-      <div className="p-4 border-2 border-dashed rounded-sm grid grid-cols-2 gap-y-2 gap-x-6">
-        <p className="text-lg font-semibold col-span-2 pb-2">Enter your current and desired {profession.display} stats:</p>
+      {shouldDisplayAlert && (
+        <Alert variant="destructive">
+          <ShieldAlert className="h-4 w-4" />
+          <AlertTitle>Heads up {profession.display}, we're in uncharted waters...</AlertTitle>
+          <AlertDescription className="flex flex-col gap-y-2">
+            <p className="text-justify">Level-to-XP mapping is currently best-effort. If you notice an inconsistency, please ping @simpleauthority in the Brighter Shores community discord. Also, coordinate the proper value of the XP for the Level with Luca's XP table (also found in the Discord.) As time goes on, the dataset will improve!</p>
+            <Button variant="outline" size="sm" onClick={() => setCookie('dismissed-alert', 'true')}><span className="text-muted-foreground">Dismiss for a week</span></Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="p-4 border-2 rounded-sm grid grid-cols-2 gap-4 lg:gap-8">
+        <div className="col-span-2 pb-2 flex items-center justify-between">
+          <h1 className="font-semibold">Parameters:</h1>
+          <div className="flex items-center gap-x-2">
+            <Switch id="kp-toggle" checked={useKpForXp} onCheckedChange={(checked) => setUseKpForXp(checked)} />
+            <Label htmlFor="kp-toggle"><p>Auto-redeem KP for XP</p></Label>
+          </div>
+        </div>
         <CalculatorInput label="Current Level" max={MAX_LEVEL - 1} control={currentLevel} onChange={updateCurrentLevel} />
         <CalculatorInput label="Current XP" max={MAX_XP - 1} control={currentXp} onChange={updateCurrentXp} />
         <CalculatorInput label="Target Level" max={MAX_LEVEL} control={targetLevel} onChange={updateTargetLevel} />
         <CalculatorInput label="Target XP" max={MAX_LEVEL} control={targetXp} onChange={updateTargetXp} />
-      </div>
-      <div className="p-4 border-2 border-dashed rounded-sm grid grid-cols-2 gap-y-2 gap-x-6">
-        <p className="text-lg font-semibold col-span-2 pb-2">Modify calculation parameters:</p>
+        <hr className="col-span-2 my-2" />
         <CalculatorInput label="XP/Item" tooltip="The amount of XP killing/harvesting/creating one enemy/item gives you. You can find this on the wiki. Later, this tool will let you select the enemy/item instead." min={1} max={MAX_XP} control={xpYieldPerItem} onChange={updateXpYieldPerItem} />
         <CalculatorInput label="XP Boost %" tooltip="How much XP boost you have from your higher tier tool, enchantment, or xp potion. If none, use 0." min={0} max={100} control={xpBoostPercent} onChange={updateXpBoostPercent} />
-        <CalculatorInput label="Current KP %" tooltip="How far along your current KP percentage is. 0 is the default." min={0} max={100} control={currentKpPercent} onChange={updateCurrentKpPercent} />
-        <CalculatorInput label="KP Gain %/Item" tooltip="How much KP% you gain per enemy/item killed/harvested/created (this is a guess for now)." min={0} max={100} control={kpPercentGainPerItem} onChange={updateKpPercentGainPerItem} />
+        <CalculatorInput label="Current KP %" tooltip="How far along your current KP percentage is. 0 is the default." min={0} max={100} control={currentKpPercent} onChange={updateCurrentKpPercent} disabled={(currentLevel ?? 0) < 20} />
+        <CalculatorInput label="KP Gain/Item" tooltip="How much percent KP you gain per enemy/item killed/harvested/created (this is a guess for now)." min={0} max={100} control={kpPercentGainPerItem} onChange={updateKpPercentGainPerItem} disabled={(currentLevel ?? 0) < 20} />
       </div>
-      <div className="p-4 border-2 border-dashed rounded-sm flex flex-col gap-y-2">
+
+      {/* results section */}
+      <div className="p-4 border-2 rounded-sm flex flex-col gap-y-2">
+        <div className="flex justify-between items-center pb-2">
+          <h1 className="font-semibold">Results{debug ? ' (detailed)' : ''}:</h1>
+          <div className="flex gap-x-2 items-center grow-0">
+            <Switch id="debug-toggle" checked={debug} onCheckedChange={(checked) => setDebug(checked)} />
+            <Label htmlFor="debug-toggle"><p>Detailed mode</p></Label>
+          </div>
+        </div>
         {debug ? (
-          <>
-            <p className="text-lg font-semibold pb-2">Detailed Calculation Log:</p>
-            <pre className="h-32 w-full overflow-scroll">
-              {debugLog.map((line, idx) => (
-                <p key={`line-${idx}`}>{line}</p>
-              ))}
-            </pre>
-          </>
+          <pre className="h-32 w-full overflow-scroll">
+            {debugLog.map((line, idx) => (
+              <p key={`line-${idx}`}>{line}</p>
+            ))}
+          </pre>
         ) : valid ? (
           <CalculatorResult
             currentLevel={debouncedCurrentLevel!}

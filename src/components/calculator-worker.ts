@@ -16,13 +16,10 @@ onmessage = (event: MessageEvent<CalculatorResultProps>) => {
   let currentLevelTmp = currentLevel
 
   let currentLevelXp = getXpForLevel(currentLevelTmp)
-  debugLog.push(`Initial current level = ${currentLevel}, XP = ${currentLevelXp}`)
-
   let nextLevelXp = getXpForLevel(currentLevelTmp + 1)
-  debugLog.push(`Initial next level = ${currentLevel + 1}, XP = ${nextLevelXp}`)
 
   const totalXpPerItem = xpYieldPerItem * (1 + (xpBoostPercent / 100))
-  debugLog.push(`Total XP per item: ${totalXpPerItem} XP; Formula = [xp yield * (1 + ((xp boost) / 100))]`)
+  debugLog.push(`XP/item = ${totalXpPerItem.toFixed(2)}`)
 
   let itemsNeeded = 0
   let knowledgePointPercent = currentKpPercent
@@ -33,46 +30,43 @@ onmessage = (event: MessageEvent<CalculatorResultProps>) => {
   const addXpWithPotentialLevelUp = (xp: number): void => {
     currentXpTmp += xp
 
-    debugLog.push(`> XP is now ${currentXpTmp}`)
+    debugLog.push(`+${xp.toFixed(2)} XP`)
 
     if (currentXpTmp >= nextLevelXp) {
-      debugLog.push(`> This caused a level up from ${currentLevelTmp} to ${currentLevelTmp + 1}`)
+      debugLog.push(`> Level up from ${currentLevelTmp} to ${currentLevelTmp + 1}`)
 
       currentLevelTmp++
       currentLevelXp = nextLevelXp
-      debugLog.push(`> New current level = ${currentLevelTmp}, XP = ${currentLevelXp}`)
 
       nextLevelXp = getXpForLevel(currentLevelTmp + 1)
-      debugLog.push(`> New next level = ${currentLevelTmp + 1}, XP = ${nextLevelXp}`)
     }
   }
 
   while ((currentLevelTmp < targetLevel) || (currentXpTmp < targetXp)) {
-    debugLog.push(`Created one item, adding ${totalXpPerItem} XP:`)
+    debugLog.push(`+1 action`)
     addXpWithPotentialLevelUp(totalXpPerItem)
 
-    debugLog.push(`Adding ${kpPercentGainPerItem}% kp for creating this item:`)
+    debugLog.push(`+${kpPercentGainPerItem}% KP`)
     knowledgePointPercent += kpPercentGainPerItem
     if (knowledgePointPercent >= 100) {
-      debugLog.push(`KP has reached 100%...`)
+      debugLog.push(`> KP >= 100%`)
 
       const modifier = kpXpRedemptionModifier(currentLevelTmp)
-      debugLog.push(`> Current KP redemption modifier is ${modifier}; formula = if level < 200 return 0.25 else return 0.0625`)
+      debugLog.push(`> KP redemption modifier = ${modifier}`)
 
       const xpRedemption = modifier * (nextLevelXp - currentLevelXp)
-      debugLog.push(`> Redeeming for ${xpRedemption} XP...`)
       addXpWithPotentialLevelUp(xpRedemption)
 
       kpsRedeemed++
-      knowledgePointPercent = 0
+      knowledgePointPercent -= 100
 
-      debugLog.push(`> Reset knowledge points to 0, continuing...`)
+      debugLog.push(`-= 100% KP; ${knowledgePointPercent}% remains`)
     }
 
     itemsNeeded++
   }
 
-  debugLog.push("Calculation has finished!")
+  debugLog.push("------------")
   debugLog.push(`Items needed: ${itemsNeeded}`)
   debugLog.push(`KPs redeemed: ${kpsRedeemed}`)
 

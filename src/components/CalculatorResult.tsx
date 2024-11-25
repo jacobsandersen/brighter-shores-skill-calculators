@@ -58,20 +58,19 @@ export default function CalculatorResult(props: CalculatorResultProps): ReactNod
 
   return (
     <>
-      <p className="text-lg font-semibold pb-2">Results:</p>
       <p>Assuming you maintain your XP Boost and redeem your knowledge points for XP, you will need:</p>
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Field Name</TableHead>
-            <TableHead>Data</TableHead>
+            <TableHead><p>Field Name</p></TableHead>
+            <TableHead><p>Data</p></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {info.map((datum, idx) => (
             <TableRow key={`datum-${idx}`}>
-              <TableCell>{datum[0]}</TableCell>
-              <TableCell>{datum[1]}</TableCell>
+              <TableCell><p>{datum[0]}</p></TableCell>
+              <TableCell><p>{datum[1]}</p></TableCell>
             </TableRow>
           ))}
         </TableBody>

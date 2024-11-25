@@ -14,7 +14,7 @@ export default function ProfessionIcon({ episode, profession, heightPx = 30, wid
     <img 
       src={`/profession-icons/${episode.identifier}/${profession.identifier}.webp`} 
       style={{ height: `${heightPx}px`, width: `${widthPx}px` }} 
-      alt={`Icon for ${profession} in ${episode.display}`} 
+      alt={`Icon for ${profession.display} in ${episode.display}`} 
     />
   )
 }

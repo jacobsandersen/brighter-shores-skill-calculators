@@ -57,4 +57,30 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
+
+  body {
+    h1 {
+      @apply text-base;
+    }
+    h2, h5, p, input {
+      @apply text-xs;
+    }
+  }
+
+  @screen sm {
+    body {
+      h1 {
+        @apply text-lg;
+      }
+      h2, h5, p, input {
+        @apply text-sm;
+      }
+    }
+  }
+
+  /* @screen md {
+    body {
+      @apply text-base;
+    }
+  } */
 }
